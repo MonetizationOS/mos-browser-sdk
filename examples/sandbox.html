@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>@monetizationos/browser — sandbox</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Reddit+Sans:ital,wght@0,300..700;1,300..700&display=swap");
+    :root {
+      /* firecrest light theme: shale (cool-gray) palette, dark primary, crimson brand — oklch to match exactly */
+      --bg: oklch(0.961 0 0);             /* shale-100 — page background */
+      --card: oklch(0.985 0 0);           /* shale-50 — panels / sidebar / header */
+      --fg: oklch(0.247 0.036 260.71);    /* shale-900 — text */
+      --mut: oklch(0.444 0.031 261.03);   /* shale-700 — muted text */
+      --bd: oklch(0.907 0.003 264.54);    /* shale-200 — borders */
+      --primary: oklch(0.281 0.042 261.2);        /* shale-800 — primary button */
+      --primary-hover: oklch(0.247 0.036 260.71); /* shale-900 */
+      --primary-fg: oklch(0.985 0 0);     /* shale-50 */
+      --brand: oklch(0.624 0.25 18.5);    /* brand-primary-600 — crimson accent */
+      --ring: oklch(0.444 0.031 261.03 / 0.35);
+      --radius: 0.625rem;                 /* firecrest --radius (10px) */
+      --font-sans: "Reddit Sans", ui-sans-serif, system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { font: 14px/1.5 var(--font-sans); margin: 0; color: var(--fg); background: var(--bg); }
+    header { padding: 14px 20px; border-bottom: 1px solid var(--bd); background: var(--card); }
+    header h1 { font-size: 16px; margin: 0; font-weight: 700; }
+    header p { margin: 4px 0 0; color: var(--mut); font-size: 12px; }
+    main { display: grid; grid-template-columns: 360px 1fr; min-height: calc(100vh - 56px); }
+    #controls { padding: 16px 20px; border-right: 1px solid var(--bd); background: var(--card); overflow: auto; }
+    #controls label { display: block; font-weight: 600; font-size: 12px; margin: 12px 0 4px; }
+    #controls input[type=text], #controls textarea, #controls select { width: 100%; padding: 7px 9px; border: 1px solid var(--bd); border-radius: 8px; font: inherit; background: var(--card); color: var(--fg); }
+    #controls input:focus-visible, #controls textarea:focus-visible, #controls select:focus-visible { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--ring); }
+    #controls textarea { resize: vertical; font-family: ui-monospace, monospace; font-size: 12px; }
+    #controls .row { display: flex; gap: 8px; align-items: center; }
+    #controls .row label { margin: 0; font-weight: 400; }
+    .btns { display: flex; gap: 8px; margin-top: 16px; }
+    button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--bd); background: var(--card); color: var(--fg); cursor: pointer; }
+    button:hover { background: var(--bg); }
+    button.primary { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); font-weight: 600; }
+    button.primary:hover { background: var(--primary-hover); }
+    .hint { color: var(--mut); font-size: 11px; margin-top: 4px; }
+    #right { padding: 16px 20px; overflow: auto; display: flex; flex-direction: column; gap: 14px; background: var(--bg); }
+    .panel { border: 1px solid var(--bd); border-radius: var(--radius); background: var(--card); }
+    .panel > h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--mut); margin: 0; padding: 8px 12px; border-bottom: 1px solid var(--bd); }
+    .panel > .body { padding: 12px; }
+    #status { padding: 10px 12px; border-radius: var(--radius); font-size: 13px; display: none; }
+    #status.ok { display: block; background: oklch(0.97 0.02 165); border: 1px solid oklch(0.84 0.12 165); color: oklch(0.43 0.1 165); }
+    #status.err { display: block; background: oklch(0.971 0.013 17.4); border: 1px solid oklch(0.808 0.114 19.6); color: oklch(0.444 0.177 26.9); }
+    pre { margin: 0; font: 12px/1.45 ui-monospace, monospace; white-space: pre-wrap; word-break: break-word; max-height: 280px; overflow: auto; }
+    #trace .body { font: 12px/1.5 ui-monospace, monospace; max-height: 220px; overflow: auto; }
+    #trace .line { padding: 1px 0; }
+    #trace .warn { color: oklch(0.55 0.13 65); } #trace .error { color: var(--brand); } #trace .debug { color: var(--mut); }
+    /* The real demo page renders here, styled, in its own realm — the SDK is injected into it. */
+    #preview { width: 100%; height: 64vh; border: 1px solid var(--bd); border-radius: var(--radius); background: #fff; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>@monetizationos/browser — sandbox</h1>
+    <p>Loads a real page from the demo origin in an iframe, injects the SDK into it, and runs a live surface decision. Publishable keys only — never paste a secret key.</p>
+  </header>
+
+  <main>
+    <section id="controls">
+      <div class="row">
+        <input id="useProxy" type="checkbox" checked />
+        <label for="useProxy">Route API through local proxy (avoids CORS)</label>
+      </div>
+      <div class="hint">On: the SDK calls same-origin (this dev server), which forwards to the API. Off: direct call (tests the real CORS path).</div>
+
+      <label for="apiBaseUrl">API base URL (direct mode only)</label>
+      <input id="apiBaseUrl" type="text" value="https://api.monetizationos.com" spellcheck="false" />
+
+      <label for="pk">Publishable key</label>
+      <input id="pk" type="text" placeholder="pk_live_… or pk_test_…" spellcheck="false" autocomplete="off" />
+
+      <label for="surface">Surface slug</label>
+      <input id="surface" type="text" placeholder="article-paywall" spellcheck="false" />
+
+      <label for="demoPath">Page to load (path on the demo origin)</label>
+      <div class="row">
+        <input id="demoPath" type="text" value="/articles/renewable-energy-breakthrough" spellcheck="false" />
+        <button id="loadPage" type="button" style="white-space:nowrap">Load</button>
+      </div>
+      <div class="hint">Served (styled) via the proxy and used as <code>resource.id</code>. Run reloads it fresh, then injects the SDK.</div>
+
+      <label for="identityMode">Identity</label>
+      <select id="identityMode">
+        <option value="anon">Anonymous (default)</option>
+        <option value="jwt">User JWT</option>
+      </select>
+      <textarea id="jwt" rows="2" placeholder="paste a user JWT" style="display:none;margin-top:6px"></textarea>
+
+      <div class="row" style="margin-top:12px">
+        <input id="installCloak" type="checkbox" />
+        <label for="installCloak">Install cloak (anti-flicker mask)</label>
+      </div>
+      <div class="hint">Hides the selector below before the SDK runs; the SDK reveals it on the decision (or when the timeout fires). Lets you watch the mask → reveal.</div>
+
+      <label for="cloakSelector">Cloak selector</label>
+      <input id="cloakSelector" type="text" value="article" spellcheck="false" />
+
+      <label for="decisionTimeoutMs">Decision / cloak timeout (ms)</label>
+      <input id="decisionTimeoutMs" type="text" value="5000" spellcheck="false" inputmode="numeric" />
+
+      <label for="apiDelay">Simulate API delay (ms)</label>
+      <input id="apiDelay" type="text" value="0" spellcheck="false" inputmode="numeric" />
+      <div class="hint">Delays the decision response. Set it <strong>above</strong> the timeout to see the cloak reveal early (FOUC), then the decision apply late.</div>
+
+      <div class="btns">
+        <button id="run" class="primary" type="button">Run real decision</button>
+        <button id="loadPage2" type="button">Reload page</button>
+      </div>
+    </section>
+
+    <section id="right">
+      <div class="panel">
+        <h2>Page (real demo content — SDK injected & decision applied here)</h2>
+        <div class="body"><iframe id="preview" title="demo page"></iframe></div>
+      </div>
+
+      <div id="status"></div>
+
+      <div class="panel">
+        <h2>Decision response</h2>
+        <div class="body"><pre id="decision">—</pre></div>
+      </div>
+
+      <div class="panel" id="trace">
+        <h2>Trace (onLog)</h2>
+        <div class="body" id="traceBody"></div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    const $ = (id) => document.getElementById(id)
+    const STORE_KEY = 'mos-sandbox'
+
+    const fields = ['apiBaseUrl', 'pk', 'surface', 'demoPath', 'identityMode', 'jwt', 'cloakSelector', 'decisionTimeoutMs', 'apiDelay']
+    const checks = ['useProxy', 'installCloak']
+    const save = () => {
+      const data = {}
+      for (const f of fields) data[f] = $(f).value
+      for (const c of checks) data[c] = $(c).checked
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(data)) } catch {}
+    }
+    const restore = () => {
+      let data = {}
+      try { data = JSON.parse(localStorage.getItem(STORE_KEY) || '{}') } catch {}
+      for (const f of fields) if (data[f] != null) $(f).value = data[f]
+      for (const c of checks) if (data[c] != null) $(c).checked = data[c]
+      syncIdentity()
+    }
+
+    const syncIdentity = () => { $('jwt').style.display = $('identityMode').value === 'jwt' ? 'block' : 'none' }
+    const setStatus = (kind, msg) => { const el = $('status'); el.className = kind; el.textContent = msg }
+    const addTrace = (e) => {
+      const div = document.createElement('div')
+      div.className = 'line ' + e.level
+      div.textContent = `${(e.level || '').padEnd(5)} ${e.code} ${e.context ? JSON.stringify(e.context) : ''}`
+      $('traceBody').appendChild(div)
+    }
+
+    const resourcePath = () => { const p = $('demoPath').value.trim() || '/'; return p.startsWith('/') ? p : '/' + p }
+
+    // Load the proxied (styled, same-origin) demo page into the iframe; resolve once it has loaded.
+    const loadPage = () =>
+      new Promise((resolve) => {
+        const iframe = $('preview')
+        iframe.onload = () => resolve()
+        iframe.src = '/origin' + resourcePath()
+      })
+
+    // Mirror of the SDK's buildCloakSnippet(): inject the synchronous cloak into the iframe head so the
+    // SDK has something real to reveal. Its own safety timeout is set high (60s) so the SDK — not the
+    // snippet — is what reveals, which is the behaviour we're here to watch.
+    const installCloak = (doc, selector) => {
+      const s = doc.createElement('script')
+      s.textContent =
+        `(function(){var S=${JSON.stringify([selector])},T=60000,I="mos-cloak-style";` +
+        `var css=S.map(function(s){return s+'{visibility:hidden!important}';}).join('');` +
+        `var st=document.createElement('style');st.id=I;st.textContent=css;(document.head||document.documentElement).appendChild(st);` +
+        `var done=false,timer;function reveal(){if(done)return;done=true;var e=document.getElementById(I);if(e&&e.parentNode)e.parentNode.removeChild(e);if(timer)clearTimeout(timer);}` +
+        `timer=setTimeout(reveal,T);` +
+        `window["__mosCloak"]={reveal:reveal,get revealed(){return done;},styleId:I,selectors:S,timeoutMs:T};})();`
+      doc.head.appendChild(s)
+    }
+
+    // Inject the IIFE bundle into the loaded iframe so the SDK runs in the page's own realm and
+    // applies the decision to the real (styled) DOM. Config is set on the iframe's window first.
+    const injectSdk = () => {
+      const iframe = $('preview')
+      const win = iframe.contentWindow
+      const doc = iframe.contentDocument
+      const jwt = $('identityMode').value === 'jwt' ? $('jwt').value.trim() : ''
+      const rel = resourcePath()
+      const delayMs = Math.max(0, Number($('apiDelay').value) || 0)
+      const timeoutMs = Math.max(0, Number($('decisionTimeoutMs').value) || 5000)
+
+      // Install the cloak BEFORE the SDK so the masked region is hidden when the SDK boots.
+      if ($('installCloak').checked) installCloak(doc, $('cloakSelector').value.trim() || 'article')
+
+      win.MOSConfig = {
+        // Proxy mode: post same-origin (to this dev server, which forwards to the API), avoiding CORS.
+        apiBaseUrl: $('useProxy').checked ? win.location.origin : ($('apiBaseUrl').value.trim() || undefined),
+        publishableKey: $('pk').value.trim(),
+        surface: $('surface').value.trim(),
+        // The iframe's path is `/origin/...`; report the real resource path instead.
+        resourceProvider: () => ({ id: rel }),
+        identity: jwt ? { jwtGlobal: () => jwt } : undefined,
+        decisionTimeoutMs: timeoutMs,
+        // Simulate a slow API by delaying before the real (iframe-realm) fetch, so the cloak/timeout
+        // window is observable. Works in both proxy and direct mode.
+        fetchImpl: delayMs > 0
+          ? async (input, init) => { await new Promise((r) => setTimeout(r, delayMs)); return win.fetch(input, init) }
+          : undefined,
+        onDecision: (d) => {
+          $('decision').textContent = JSON.stringify(d, null, 2)
+          setStatus('ok', 'Decision received and applied to the page.')
+        },
+        onError: (err) => {
+          const msg = String(err?.message || err)
+          const corsy = /failed to fetch|networkerror|load failed/i.test(msg)
+          setStatus('err', corsy ? `${msg} — likely a CORS/network issue (direct mode): the API must allow this origin for pk_ requests.` : msg)
+        },
+        onWarn: (w) => addTrace({ level: 'warn', code: w.code, context: w }),
+        onLog: addTrace,
+      }
+
+      const script = doc.createElement('script')
+      script.src = '/dist/mos.iife.js'
+      script.onerror = () => setStatus('err', 'Failed to load /dist/mos.iife.js — run `pnpm build` first.')
+      doc.head.appendChild(script) // self-initializes → fires one decision against the iframe DOM
+    }
+
+    const run = async () => {
+      save()
+      const pk = $('pk').value.trim()
+      const surface = $('surface').value.trim()
+      if (!pk || !surface) { setStatus('err', 'Publishable key and surface slug are required.'); return }
+      if (pk.startsWith('sk_')) { setStatus('err', 'That looks like a SECRET key — only paste a publishable pk_ key here.'); return }
+      $('traceBody').innerHTML = ''
+      $('decision').textContent = '…'
+      setStatus('', '')
+      await loadPage() // fresh page each run
+      injectSdk()
+      setStatus('ok', `Injected the SDK into ${resourcePath()} — see the decision, trace, and any transforms in the page above.`)
+    }
+
+    $('identityMode').addEventListener('change', syncIdentity)
+    $('run').addEventListener('click', run)
+    const doLoad = () => { save(); void loadPage().then(() => setStatus('ok', `Loaded ${resourcePath()} (no decision yet — hit Run).`)) }
+    for (const id of ['loadPage', 'loadPage2']) $(id).addEventListener('click', doLoad)
+    restore()
+    void loadPage()
+  </script>
+</body>
+</html>

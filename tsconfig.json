@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "target": "esnext",
+        "lib": ["esnext", "dom", "dom.iterable"],
+        "module": "esnext",
+        "moduleResolution": "Bundler",
+        "resolveJsonModule": true,
+
+        "noEmit": true,
+
+        "isolatedModules": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+
+        "skipLibCheck": true,
+        "ignoreDeprecations": "6.0",
+
+        "types": ["node"]
+    },
+    "include": ["src/**/*.ts", "test/**/*.ts"]
+}

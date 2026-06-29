@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="MonetizationOS" />
+  <meta property="og:type" content="article" />
+  <title>@monetizationos/browser — static demo</title>
+
+  <!--
+    1) Cloak anti-flicker snippet (synchronous, before paint). This is the exact canonical literal
+       from buildCloakSnippet() with default options — copy it as-is; edit only the S/T constants.
+  -->
+  <script>
+/* MOS anti-flicker (optional): edit the selector(s) and timeout below */
+(function(){var S=["[data-mos-cloak]"],T=5000;
+var I="mos-cloak-style";
+var css=S.map(function(s){return s+'{visibility:hidden!important}';}).join('');
+var st=document.createElement('style');st.id=I;st.textContent=css;
+var n=document.currentScript&&document.currentScript.nonce;if(n)st.nonce=n;
+(document.head||document.documentElement).appendChild(st);
+var done=false,timer;function reveal(){if(done)return;done=true;var e=document.getElementById(I);if(e&&e.parentNode)e.parentNode.removeChild(e);if(timer)clearTimeout(timer);}
+timer=setTimeout(reveal,T);
+window["__mosCloak"]={reveal:reveal,get revealed(){return done;},styleId:I,selectors:S,timeoutMs:T};})();
+  </script>
+
+  <!-- 2) Stub-and-queue, so early MOS.identify()/MOS.decide() calls aren't lost. -->
+  <script>
+    window.MOS = window.MOS || { q: [] };
+    ['identify', 'decide', 'reveal'].forEach((m) => {
+      window.MOS[m] = window.MOS[m] || function () { (window.MOS.q = window.MOS.q || []).push([m, arguments]); };
+    });
+  </script>
+
+  <!--
+    3) Config. In production you'd just use data-mos-* attributes on the SDK <script> tag (below)
+       OR window.MOSConfig with your real publishableKey + surface. For this OFFLINE demo we inject a
+       mock `fetchImpl` so the page works with no backend — remove it to hit the real API.
+  -->
+  <script>
+    window.MOSConfig = {
+      publishableKey: 'pk_demo_offline',
+      surface: 'article-paywall',
+      onDecision: (d) => { console.log('[mos] decision', d); },
+      onError: (e) => { console.warn('[mos] error', e); },
+      // Structured trace — the SDK never logs on its own; the host pipes events wherever it wants.
+      onLog: (e) => { console.log('[mos:trace]', e.code, e.context || ''); },
+      // DEMO ONLY — returns a fake decision that appends a paywall notice and removes the teaser.
+      fetchImpl: () => Promise.resolve(new Response(JSON.stringify({
+          status: 'success',
+          identity: { identifier: 'anon-demo', isAuthenticated: false, authType: 'anonymous', jwtClaims: {} },
+          features: {}, customer: { hasProducts: true }, surfaceBehavior: {}, componentsSkipped: false,
+          componentBehaviors: {
+            paywall: {
+              metadata: { cssSelector: '#article' },
+              content: { append: [{ type: 'html', content: '<aside data-mos-cloak class="paywall"><b>Subscribe</b> to keep reading. <i>(injected by @monetizationos/browser)</i></aside>' }] }
+            }
+          }
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    };
+  </script>
+
+  <!-- 4) The async SDK tag. Built locally: run `pnpm build` then open this file. -->
+  <script src="../dist/mos.iife.js" async></script>
+
+  <style>
+    body { font: 16px/1.6 system-ui, sans-serif; max-width: 42rem; margin: 3rem auto; padding: 0 1rem; }
+    .paywall { display: block; margin-top: 1.5rem; padding: 1rem; border: 2px dashed #888; border-radius: 8px; background: #fafafa; }
+  </style>
+</head>
+<body>
+  <h1>The Article</h1>
+  <div id="article">
+    <p>This is the opening paragraph that everyone can read.</p>
+    <!-- A region cloaked before paint, revealed after the decision (or the 5s safety timeout). -->
+    <p data-mos-cloak>This subscriber-only paragraph is cloaked until the decision returns.</p>
+  </div>
+
+  <p style="margin-top:2rem;color:#666">Open the console to see the decision. The paywall notice is
+    injected by the SDK; the cloaked paragraph is revealed after the decision.</p>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{
+    "name": "@monetizationos/browser",
+    "version": "0.1.0",
+    "description": "MonetizationOS Browser SDK",
+    "license": "MIT",
+    "type": "module",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./iife": "./dist/mos.iife.js",
+        "./package.json": "./package.json"
+    },
+    "files": ["dist", "README.md", "LICENSE"],
+    "sideEffects": ["./dist/mos.iife.js", "./src/iife.ts"],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/MonetizationOS/mos-browser-sdk.git"
+    },
+    "bugs": {
+        "url": "https://github.com/MonetizationOS/mos-browser-sdk/issues"
+    },
+    "homepage": "https://github.com/MonetizationOS/mos-browser-sdk#readme",
+    "keywords": ["monetization", "monetizationos", "paywall", "browser", "sdk", "surface-decisions"],
+    "engines": {
+        "node": ">=22"
+    },
+    "packageManager": "pnpm@10.32.1",
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "build": "tsdown",
+        "sandbox": "tsdown && node scripts/serve.mjs",
+        "test": "vitest",
+        "test:run": "vitest run",
+        "test:browser": "vitest run --config vitest.browser.config.mts",
+        "typecheck": "tsc --noEmit",
+        "lint": "biome check --diagnostic-level=error --no-errors-on-unmatched",
+        "format": "biome check --write --no-errors-on-unmatched",
+        "prepublishOnly": "pnpm run typecheck && pnpm run test:run && pnpm run build"
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": ["esbuild"]
+    },
+    "dependencies": {
+        "@monetizationos/proxy": "^1.4.3"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "2.4.15",
+        "@types/node": "^24.12.3",
+        "@vitest/browser": "~4.1.5",
+        "@vitest/browser-playwright": "~4.1.5",
+        "jsdom": "^25.0.1",
+        "playwright": "^1.49.1",
+        "tsdown": "^0.22.3",
+        "typescript": "^6.0.3",
+        "vitest": "~4.1.5"
+    }
+}
