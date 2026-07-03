@@ -40,6 +40,10 @@
         "typecheck": "tsc --noEmit",
         "lint": "biome check --diagnostic-level=error --no-errors-on-unmatched",
         "format": "biome check --write --no-errors-on-unmatched",
+        "changeset": "changeset",
+        "version": "changeset version && node scripts/sync-version.mjs && pnpm run format",
+        "release": "changeset publish",
+        "deploy:r2": "node scripts/deploy-r2.mjs",
         "prepublishOnly": "pnpm run typecheck && pnpm run test:run && pnpm run build"
     },
     "pnpm": {
@@ -50,6 +54,8 @@
     },
     "devDependencies": {
         "@biomejs/biome": "2.4.15",
+        "@changesets/changelog-github": "^0.7.0",
+        "@changesets/cli": "^2.31.0",
         "@types/node": "^24.12.3",
         "@vitest/browser": "~4.1.5",
         "@vitest/browser-playwright": "~4.1.5",
