@@ -5,7 +5,7 @@
  * Kept as a hand-maintained constant rather than importing package.json so the value survives
  * tree-shaking and the SSR-safe build with no JSON-module resolution at runtime.
  */
-export const BROWSER_PACKAGE_VERSION = '0.1.0'
+export const BROWSER_PACKAGE_VERSION = '1.0.0'
 
 /** Header carrying {@link BROWSER_PACKAGE_VERSION}. */
 export const BROWSER_PACKAGE_VERSION_HEADER = 'X-MOS-Browser-Version'
