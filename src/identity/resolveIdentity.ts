@@ -3,11 +3,7 @@ import { readDeclarativeToken } from './declarativeSources'
 import { createCookieStore, createDefaultStore, createLocalStorageStore } from './stores'
 import type { ExplicitIdentity, Identity, IdentityConfig, IdentityStore } from './types'
 
-const tokenFromExplicit = (explicit: ExplicitIdentity | undefined): string | undefined => {
-    if (!explicit) return undefined
-    if (typeof explicit === 'string') return explicit || undefined
-    return explicit.userJwt || undefined
-}
+const tokenFromExplicit = (explicit: ExplicitIdentity | undefined): string | undefined => explicit?.userJwt || undefined
 
 /** Turn a token into an {@link Identity}, attaching the anon-fallback flag unless disabled. */
 const buildJwtIdentity = (userJwt: string, config: IdentityConfig | undefined): Identity =>

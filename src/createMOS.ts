@@ -1,7 +1,7 @@
 import type { Resource, SurfaceDecisionResponse } from '@monetizationos/proxy'
 import { defaultRevealTransform, type RevealReason, runRevealPipeline } from './cloak/revealPipeline'
 import { resolveConfig } from './config/resolveConfig'
-import type { MOSClientConfig, MOSLogLevel, ResolvedConfig } from './config/types'
+import type { MOSClientConfig, MOSLogEvent, MOSLogLevel, ResolvedConfig } from './config/types'
 import { buildResource } from './decision/buildResource'
 import { type DirectiveHandler, dispatchDirectives } from './decision/dispatch'
 import { type DecisionResult, fetchDecision } from './decision/fetchDecision'
@@ -49,18 +49,23 @@ const identityKind = (id: Identity): string =>
  * Create a MonetizationOS browser client. One core, used by both the ESM
  * `createMOS` export and the IIFE script-tag bootstrap.
  *
- * Per page view: resolve identity → build resource → call `surface-decisions` with the publishable
+ * Per page view: resolve identity → build resource → call `surface-decisions` with the public
  * key → dispatch each understood directive block → reveal cloaked regions (on success, error, or
  * timeout) → expose the full decision to host callbacks. Fail-open throughout.
  */
 export const createMOS = (input: Partial<MOSClientConfig> = {}): MOSClient => {
-    const config = resolveConfig(input)
+    // Resolution warnings surface through `onLog`, which is itself part of the config being
+    // resolved — so buffer them and replay once the resolved config (and its logger) exists.
+    const resolutionEvents: MOSLogEvent[] = []
+    const config = resolveConfig(input, (event) => resolutionEvents.push(event))
     let explicit: ExplicitIdentity | undefined
 
     const store = resolveStore(config.identity)
 
     const log = (level: MOSLogLevel, code: string, message: string, context?: Record<string, unknown>): void =>
         emit(config.onLog, { level, code, message, context })
+
+    for (const event of resolutionEvents) emit(config.onLog, event)
 
     const revealNow = (reason: RevealReason, decision?: SurfaceDecisionResponse): void => {
         const win = getWindow()
@@ -82,8 +87,8 @@ export const createMOS = (input: Partial<MOSClientConfig> = {}): MOSClient => {
         const win = getWindow()
         if (!doc || !win) return undefined // SSR / non-browser: no-op.
 
-        if (!config.publishableKey || !config.surface) {
-            const error = new Error('@monetizationos/browser: `publishableKey` and `surface` are required.')
+        if (!config.publicKey || !config.surface) {
+            const error = new Error('@monetizationos/browser: `publicKey` and `surface` are required.')
             log('error', 'config:invalid', error.message)
             emit(config.onError, error)
             revealNow('error')
@@ -129,7 +134,7 @@ export const createMOS = (input: Partial<MOSClientConfig> = {}): MOSClient => {
 
             const result = await fetchDecision({
                 apiBaseUrl: config.apiBaseUrl,
-                publishableKey: config.publishableKey,
+                publicKey: config.publicKey,
                 surfaceSlug: config.surface,
                 identity,
                 resource,

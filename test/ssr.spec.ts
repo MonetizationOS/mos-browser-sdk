@@ -13,7 +13,7 @@ describe('SSR / non-browser safety', () => {
 
     it('createMOS().decide() no-ops (resolves undefined) with no DOM', async () => {
         const { createMOS } = await import('../src/index')
-        const mos = createMOS({ publishableKey: 'pk', surface: 's' })
+        const mos = createMOS({ publicKey: 'pk', surface: 's' })
         await expect(mos.decide()).resolves.toBeUndefined()
         // Imperative methods are safe to call too.
         expect(() => mos.identify({ userJwt: 'x' })).not.toThrow()

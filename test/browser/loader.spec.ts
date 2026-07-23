@@ -28,7 +28,7 @@ describe('one-paste loader — config discovery in a real browser', () => {
         expect(document.getElementById(MOS_SDK_SCRIPT_ID)).toBeTruthy()
         // From test context `document.currentScript` is null → the `querySelector('script[data-mos-pk]')`
         // fallback finds the injected tag and reads its config.
-        expect(readScriptAttributes()).toEqual({ publishableKey: 'pk_live_x', surface: 'article' })
+        expect(readScriptAttributes()).toEqual({ publicKey: 'pk_live_x', surface: 'article' })
     })
 
     it('a dynamically-injected script recovers its own data-mos-* config via document.currentScript', () => {
@@ -42,6 +42,6 @@ describe('one-paste loader — config discovery in a real browser', () => {
         s.textContent = 'window.__cfg = window.__readAttrs()'
         document.head.appendChild(s) // executes synchronously; document.currentScript = s
 
-        expect(w.__cfg).toEqual({ publishableKey: 'pk_inj', surface: 'sfc' })
+        expect(w.__cfg).toEqual({ publicKey: 'pk_inj', surface: 'sfc' })
     })
 })

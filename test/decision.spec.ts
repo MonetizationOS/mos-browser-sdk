@@ -75,7 +75,7 @@ describe('fetchDecision (pk_ request)', () => {
 
         const res = await fetchDecision({
             apiBaseUrl: 'https://api.example.com',
-            publishableKey: 'pk_live_123',
+            publicKey: 'pk_live_123',
             surfaceSlug: 'article-paywall',
             identity: { createAnonymousIdentifier: true },
             resource: { id: '/x', meta: {} },
@@ -102,7 +102,7 @@ describe('fetchDecision (pk_ request)', () => {
             jsonResponse({ status: 'error', message: 'forbidden', statusCode: 403 }, 403)) as unknown as typeof fetch
         const res = await fetchDecision({
             apiBaseUrl: 'https://a.co',
-            publishableKey: 'pk_x',
+            publicKey: 'pk_x',
             surfaceSlug: 's',
             identity: { createAnonymousIdentifier: true },
             resource: { id: '/', meta: {} },
@@ -115,7 +115,7 @@ describe('fetchDecision (pk_ request)', () => {
         const fetchImpl = (async () => new Response('oops', { status: 500 })) as unknown as typeof fetch
         const res = await fetchDecision({
             apiBaseUrl: 'https://a.co',
-            publishableKey: 'pk_x',
+            publicKey: 'pk_x',
             surfaceSlug: 's',
             identity: { createAnonymousIdentifier: true },
             resource: { id: '/', meta: {} },
@@ -130,7 +130,7 @@ describe('fetchDecision (pk_ request)', () => {
         }) as unknown as typeof fetch
         const res = await fetchDecision({
             apiBaseUrl: 'https://a.co',
-            publishableKey: 'pk_x',
+            publicKey: 'pk_x',
             surfaceSlug: 's',
             identity: { createAnonymousIdentifier: true },
             resource: { id: '/', meta: {} },
@@ -147,7 +147,7 @@ describe('fetchDecision (pk_ request)', () => {
             })) as unknown as typeof fetch
         const p = fetchDecision({
             apiBaseUrl: 'https://a.co',
-            publishableKey: 'pk_x',
+            publicKey: 'pk_x',
             surfaceSlug: 's',
             identity: { createAnonymousIdentifier: true },
             resource: { id: '/', meta: {} },

@@ -1,5 +1,9 @@
 # Contributing
 
+## Versioning & release
+
+Every change to the published package needs a changeset (`pnpm changeset`, or write the file by hand) — see [`.changeset/README.md`](.changeset/README.md) for the workflow.
+
 ## Scripts
 
 | Script                        | What it does                                                                 |
@@ -12,7 +16,7 @@
 
 ## Local sandbox
 
-A playground for making **real** decision calls with a publishable key and watching them apply:
+A playground for making **real** decision calls with a public key and watching them apply:
 
 ```sh
 pnpm sandbox   # builds, then serves http://localhost:5173/examples/sandbox.html
@@ -36,7 +40,7 @@ MOS_ORIGIN=https://your-site.example MOS_API=https://api.monetizationos.com pnpm
 
 Notes:
 
-- **Publishable keys only** — `pk_*` is safe in page source; the sandbox rejects `sk_*`.
+- **Public keys only** — `pk_*` is safe in page source; the sandbox rejects `sk_*`.
 - **Proxy mode is on by default** and sidesteps CORS entirely (calls go same-origin to the dev server,
   which forwards them). Untick **Route through local proxy** to make the SDK call the API directly —
   that exercises the real browser CORS path a customer hits, and will fail unless the API sends

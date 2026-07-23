@@ -1,12 +1,13 @@
 import { getDocument } from '../env'
-import type { MOSClientConfig } from './types'
+import type { MOSClientConfig, MOSLogger } from './types'
 
 /**
  * Read `data-mos-*` config off the SDK's own `<script>` tag. Prefers `document.currentScript`
  * (correct during the IIFE bundle's synchronous execution), falling back to the first script carrying
- * a `data-mos-pk`. Returns a partial config; absent attributes are simply omitted.
+ * a `data-mos-pk`. Returns a partial config; absent attributes are simply omitted. `onLog` receives
+ * a warn event when an attribute is present but unusable and had to be dropped.
  */
-export const readScriptAttributes = (): Partial<MOSClientConfig> => {
+export const readScriptAttributes = (onLog?: MOSLogger): Partial<MOSClientConfig> => {
     const doc = getDocument()
     if (!doc) return {}
 
@@ -22,7 +23,7 @@ export const readScriptAttributes = (): Partial<MOSClientConfig> => {
 
     const config: Partial<MOSClientConfig> = {}
     const pk = get('data-mos-pk')
-    if (pk) config.publishableKey = pk
+    if (pk) config.publicKey = pk
     const surface = get('data-mos-surface')
     if (surface) config.surface = surface
     const apiBaseUrl = get('data-mos-api-base-url')
@@ -31,12 +32,20 @@ export const readScriptAttributes = (): Partial<MOSClientConfig> => {
     const manual = getBool('data-mos-manual')
     if (manual !== undefined) config.manual = manual
 
-    const timeout = get('data-mos-timeout') ?? get('data-mos-cloak-timeout')
+    const timeoutAttribute = get('data-mos-timeout') !== undefined ? 'data-mos-timeout' : 'data-mos-cloak-timeout'
+    const timeout = get(timeoutAttribute)
     if (timeout !== undefined) {
         // Number('') and Number('   ') are both 0, so require a positive, finite value — a blank or
         // whitespace attribute must not silently set a 0ms timeout that reveals the cloak instantly.
         const ms = Number(timeout)
         if (Number.isFinite(ms) && ms > 0) config.decisionTimeoutMs = ms
+        else
+            onLog?.({
+                level: 'warn',
+                code: 'config:invalid-timeout',
+                message: `Ignoring ${timeoutAttribute}="${timeout}" (not a positive number); the default timeout applies.`,
+                context: { attribute: timeoutAttribute, value: timeout },
+            })
     }
 
     const jwtGlobal = get('data-mos-jwt-global')

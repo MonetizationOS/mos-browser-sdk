@@ -40,8 +40,10 @@ export type MOSLogger = (event: MOSLogEvent) => void
 export type CloakConfig = boolean | { timeoutMs?: number; selectors?: string[] }
 
 export interface MOSClientConfig {
-    /** Publishable key (`pk_*`). Safe to ship in page source. Required. */
-    publishableKey: string
+    /** Public key (`pk_*`). Safe to ship in page source. Required. */
+    publicKey: string
+    /** @deprecated Renamed to `publicKey`, which wins when both are set. This alias will be removed in a later release. */
+    publishableKey?: string
     /** Surface slug (the `surface`), sent as `surfaceSlug`. Required. */
     surface: string
     /** MOS API base URL. Default `https://api.monetizationos.com`. */
@@ -88,7 +90,7 @@ export interface MOSClientConfig {
 
 /** Config after precedence resolution and defaulting — what the runtime actually uses. */
 export interface ResolvedConfig {
-    publishableKey: string
+    publicKey: string
     surface: string
     apiBaseUrl: string
     manual: boolean

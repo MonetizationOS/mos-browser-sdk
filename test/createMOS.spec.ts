@@ -27,7 +27,7 @@ const okFetch = (decision: SurfaceDecisionResponse, capture?: (body: unknown) =>
         return jsonOk(decision)
     }) as unknown as typeof fetch
 
-const base = { publishableKey: 'pk_test', surface: 'article-paywall', apiBaseUrl: 'https://api.example.com' as const }
+const base = { publicKey: 'pk_test', surface: 'article-paywall', apiBaseUrl: 'https://api.example.com' as const }
 
 beforeEach(() => {
     document.body.innerHTML = ''
@@ -183,10 +183,10 @@ describe('createMOS — failure model (fail-open)', () => {
         expect(onDecision).toHaveBeenCalledWith(decision)
     })
 
-    it('errors and reveals when publishableKey/surface are missing', async () => {
+    it('errors and reveals when publicKey/surface are missing', async () => {
         installCloak(window, { selectors: ['#slot'] })
         const onError = vi.fn()
-        const mos = createMOS({ manual: true, surface: '', publishableKey: '', onError })
+        const mos = createMOS({ manual: true, surface: '', publicKey: '', onError })
         const res = await mos.decide()
         expect(res?.ok).toBe(false)
         expect(onError).toHaveBeenCalled()

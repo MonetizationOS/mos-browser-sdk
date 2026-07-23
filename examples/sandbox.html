@@ -58,7 +58,7 @@
 <body>
   <header>
     <h1>@monetizationos/browser — sandbox</h1>
-    <p>Loads a real page from the demo origin in an iframe, injects the SDK into it, and runs a live surface decision. Publishable keys only — never paste a secret key.</p>
+    <p>Loads a real page from the demo origin in an iframe, injects the SDK into it, and runs a live surface decision. Public keys only — never paste a secret key.</p>
   </header>
 
   <main>
@@ -72,7 +72,7 @@
       <label for="apiBaseUrl">API base URL (direct mode only)</label>
       <input id="apiBaseUrl" type="text" value="https://api.monetizationos.com" spellcheck="false" />
 
-      <label for="pk">Publishable key</label>
+      <label for="pk">Public key</label>
       <input id="pk" type="text" placeholder="pk_live_… or pk_test_…" spellcheck="false" autocomplete="off" />
 
       <label for="surface">Surface slug</label>
@@ -205,7 +205,7 @@
       win.MOSConfig = {
         // Proxy mode: post same-origin (to this dev server, which forwards to the API), avoiding CORS.
         apiBaseUrl: $('useProxy').checked ? win.location.origin : ($('apiBaseUrl').value.trim() || undefined),
-        publishableKey: $('pk').value.trim(),
+        publicKey: $('pk').value.trim(),
         surface: $('surface').value.trim(),
         // The iframe's path is `/origin/...`; report the real resource path instead.
         resourceProvider: () => ({ id: rel }),
@@ -239,8 +239,8 @@
       save()
       const pk = $('pk').value.trim()
       const surface = $('surface').value.trim()
-      if (!pk || !surface) { setStatus('err', 'Publishable key and surface slug are required.'); return }
-      if (pk.startsWith('sk_')) { setStatus('err', 'That looks like a SECRET key — only paste a publishable pk_ key here.'); return }
+      if (!pk || !surface) { setStatus('err', 'Public key and surface slug are required.'); return }
+      if (pk.startsWith('sk_')) { setStatus('err', 'That looks like a SECRET key — only paste a public pk_ key here.'); return }
       $('traceBody').innerHTML = ''
       $('decision').textContent = '…'
       setStatus('', '')

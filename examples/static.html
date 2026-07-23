@@ -34,12 +34,12 @@ window["__mosCloak"]={reveal:reveal,get revealed(){return done;},styleId:I,selec
 
   <!--
     3) Config. In production you'd just use data-mos-* attributes on the SDK <script> tag (below)
-       OR window.MOSConfig with your real publishableKey + surface. For this OFFLINE demo we inject a
+       OR window.MOSConfig with your real publicKey + surface. For this OFFLINE demo we inject a
        mock `fetchImpl` so the page works with no backend — remove it to hit the real API.
   -->
   <script>
     window.MOSConfig = {
-      publishableKey: 'pk_demo_offline',
+      publicKey: 'pk_demo_offline',
       surface: 'article-paywall',
       onDecision: (d) => { console.log('[mos] decision', d); },
       onError: (e) => { console.warn('[mos] error', e); },
