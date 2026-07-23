@@ -33,7 +33,7 @@ describe('IIFE stub-and-queue loader', () => {
     it('replays queued calls in order, then exposes the real client', async () => {
         let sentIdentity: unknown
         win.MOSConfig = {
-            publishableKey: 'pk',
+            publicKey: 'pk',
             surface: 's',
             manual: true,
             fetchImpl: okFetch((id) => {
@@ -63,7 +63,7 @@ describe('IIFE stub-and-queue loader', () => {
 
         // MOSConfig (manual + fetchImpl) wins over the injected data-mos-* attrs for this test.
         win.MOSConfig = {
-            publishableKey: 'pk',
+            publicKey: 'pk',
             surface: 's',
             manual: true,
             fetchImpl: okFetch((id) => {
@@ -78,14 +78,14 @@ describe('IIFE stub-and-queue loader', () => {
     })
 
     it('is safe with no prior stub', async () => {
-        win.MOSConfig = { publishableKey: 'pk', surface: 's', manual: true, fetchImpl: okFetch(() => {}) }
+        win.MOSConfig = { publicKey: 'pk', surface: 's', manual: true, fetchImpl: okFetch(() => {}) }
         await import('../src/iife')
         expect(typeof win.MOS.identify).toBe('function')
         expect(win.MOS.__mosReady).toBe(true)
     })
 
     it('ignores non-replayable queued method names', async () => {
-        win.MOSConfig = { publishableKey: 'pk', surface: 's', manual: true, fetchImpl: okFetch(() => {}) }
+        win.MOSConfig = { publicKey: 'pk', surface: 's', manual: true, fetchImpl: okFetch(() => {}) }
         win.MOS = { q: [['evilMethod', ['x']]] }
         // Must not throw on boot.
         await expect(import('../src/iife')).resolves.toBeDefined()

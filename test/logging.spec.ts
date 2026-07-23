@@ -18,7 +18,7 @@ const okFetch = (d: SurfaceDecisionResponse) =>
     (async () =>
         new Response(JSON.stringify(d), { status: 200, headers: { 'Content-Type': 'application/json' } })) as unknown as typeof fetch
 
-const base = { publishableKey: 'pk_test', surface: 's', apiBaseUrl: 'https://api.example.com' as const, manual: true as const }
+const base = { publicKey: 'pk_test', surface: 's', apiBaseUrl: 'https://api.example.com' as const, manual: true as const }
 
 const codes = (events: MOSLogEvent[]) => events.map((e) => e.code)
 

@@ -6,7 +6,7 @@
 </div>
 
 A client-side MonetizationOS SDK. It runs in a user's browser, makes a surface decision against the MOS
-Webscale API with a **publishable key**, and applies the resulting component transformations
+Webscale API with a **public key**, and applies the resulting component transformations
 directly to the live DOM.
 
 ## Install
@@ -26,7 +26,7 @@ code from it runs at runtime.
 import { createMOS } from "@monetizationos/browser";
 
 const mos = createMOS({
-    publishableKey: "pk_live_...",
+    publicKey: "pk_live_...",
     surface: "article-paywall",
     identity: { jwtGlobal: () => authClient.getToken() }, // or { jwtCookie: 'name' }
     onDecision: (decision) => {}, // full response: features, properties, identity
@@ -46,7 +46,7 @@ All keys are optional except the first two. Set them via `createMOS(config)`, `w
 
 | Key                    | Default                          | What it does                                                                                                                                                                                                                                                  |
 | ---------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `publishableKey`       | —                                | **Required.** `pk_*` key; safe to ship in page source.                                                                                                                                                                                                        |
+| `publicKey`            | —                                | **Required.** `pk_*` key; safe to ship in page source.                                                                                                                                                                                                        |
 | `surface`              | —                                | **Required.** Surface slug, sent as `surfaceSlug`.                                                                                                                                                                                                            |
 | `apiBaseUrl`           | `https://api.monetizationos.com` | MOS API base URL.                                                                                                                                                                                                                                             |
 | `manual`               | `false`                          | Disable the auto-fire decision on load.                                                                                                                                                                                                                       |
@@ -54,7 +54,7 @@ All keys are optional except the first two. Set them via `createMOS(config)`, `w
 | `decisionTimeoutMs`    | `5000`                           | How long the cloak mask stays up awaiting the decision. On expiry the cloak reveals (the page may FOUC); the request is **not** aborted and still applies when it lands.                                                                                      |
 | `identity`             | anonymous                        | One declarative identity source — see [Identity](#identity).                                                                                                                                                                                                  |
 | `render`               | —                                | Element render options: `renderCustom` hook for `custom` elements, `onUnsupported(info)` callback.                                                                                                                                                            |
-| `resourceProvider`     | derived from page                | Hook merged over the derived `{ id, meta }` resource.                                                                                                                                                                                                         |
+| `resourceProvider`     | derived from page                | Hook merged over the derived `{ id, meta }` resource — see [Resource](#resource).                                                                                                                                                                             |
 | `revealTransforms`     | `[]`                             | Extra reveal transforms run before the default reveal.                                                                                                                                                                                                        |
 | `fetchImpl`            | global `fetch`                   | Bring your own transport — attach auth, route through an edge proxy, add retries, or mock it in tests. Standard `(input, init)` signature; the SDK never passes `init.signal`. A function, so settable via config or `window.MOSConfig` but not `data-mos-*`. |
 | `onReady()`            | —                                | Called once the SDK is initialized.                                                                                                                                                                                                                           |
@@ -90,6 +90,10 @@ for(var k in c)j.setAttribute('data-mos-'+k,c[k]);
   (`identify`, `decide`, `reveal`).
 - **String config only.** `data-mos-*` attributes carry strings — for callbacks or a custom
   `fetchImpl`, set `window.MOSConfig = { … }` above this block.
+- **Invalid `data-mos-timeout` values are dropped.** A non-numeric, zero, or negative value
+  (including a blank attribute) never sets a 0&nbsp;ms timeout that would reveal the cloak instantly —
+  the default applies instead, and a warn-level `config:invalid-timeout` event fires on `onLog` so
+  the typo stays observable.
 - **Place the tag after your `<meta>` tags** — the SDK derives the decision's `resource` from page
   metadata and starts the request as early as it can.
 - ESM users can mint this string from code with `buildLoaderSnippet({ config: { pk, surface } })`.
@@ -127,6 +131,68 @@ Declarative sources (configure one):
   token lives in memory, sidestepping HttpOnly entirely.
 - **`jwtCookie`** — a named **non-HttpOnly** cookie read via `document.cookie`. Carries an
   XSS-exposure caveat — only the named token is exposed to page JS; weigh that for your threat model.
+
+## Resource
+
+Each decision sends a `resource` derived from the page: `id` is `location.pathname`, `meta` is every
+`<meta name|property → content>` tag. Extra fields merge over those defaults via `resourceProvider`
+or an argument to `decide()` (defaults < provider < `decide()` override; merge is shallow). Arbitrary
+top-level keys are allowed and available in workflows as `resource.<key>`.
+
+Under a public key the decision request carries no `http` payload and no forwarded cookies (see
+[Known limitations](#known-limitations)). To pass selected **non-HttpOnly** cookies into decisioning,
+put them on the resource yourself — only the names you choose, never the full jar:
+
+```ts
+import { createMOS, readCookie } from "@monetizationos/browser";
+
+// Every decision (including auto-fire on load):
+createMOS({
+    // …
+    resourceProvider: () => ({
+        _matheriSegs: readCookie('_matheriSegs'),
+        _matherSegments: readCookie('_matherSegments'),
+    }),
+})
+
+// Or per call when you own `decide()` (`manual: true` / SPA route changes):
+await mos.decide({
+    _matheriSegs: readCookie('_matheriSegs'),
+    _matherSegments: readCookie('_matherSegments'),
+})
+```
+
+Script-tag installs can't put a function on `data-mos-*`. Set `window.MOSConfig` **above** the
+loader so the auto-fire decision picks it up:
+
+```html
+<script>
+  window.MOSConfig = {
+    resourceProvider: function () {
+      function readCookie(name) {
+        var parts = document.cookie.split(';');
+        var target = name + '=';
+        for (var i = 0; i < parts.length; i++) {
+          var part = parts[i].replace(/^\s+/, '');
+          if (part.indexOf(target) === 0) {
+            try { return decodeURIComponent(part.slice(target.length)); }
+            catch (e) { return undefined; }
+          }
+        }
+      }
+      return {
+        _matheriSegs: readCookie('_matheriSegs'),
+        _matherSegments: readCookie('_matherSegments'),
+      };
+    },
+  };
+</script>
+<!-- then the MOS loader snippet -->
+```
+
+Workflows then read `resource._matheriSegs` / `resource._matherSegments`. HttpOnly cookies are not
+readable from the browser; those still need the proxy / secret-key path. Prefer `resourceProvider`
+when values should ride every decision; prefer `decide({…})` when you already call it manually.
 
 ## Component rendering
 
@@ -211,8 +277,8 @@ bundled, opt-in console logger for quick local debugging:
 ```ts
 import { createMOS, consoleLogger } from '@monetizationos/browser'
 
-createMOS({ /* … */, onLog: (e) => myLogger.log(e.level, e.code, e.context) })
-createMOS({ /* … */, onLog: consoleLogger })
+createMOS({ ...config, onLog: (e) => myLogger.log(e.level, e.code, e.context) })
+createMOS({ ...config, onLog: consoleLogger })
 ```
 
 `consoleLogger` is the **only** path that writes to `console`, and only when you explicitly pass it.
@@ -228,7 +294,8 @@ createMOS({ /* … */, onLog: consoleLogger })
 - **No HTTP response manipulation** (`surfaceBehavior.http`): redirects, status, body, header/cookie
   application are out of scope for v1 (deferred to a future browser-control block).
 - **No `surfaceDecisionsCookies` forwarding.** Arbitrary matched-cookie pass-through is unavailable
-  in `pk_` mode. If your decisioning depends on forwarded cookies, that input is absent.
+  in `pk_` mode. If your decisioning depends on forwarded cookies, that input is absent — though
+  selected non-HttpOnly cookies can ride the [resource](#resource) instead.
 
 ## Contributing
 

@@ -33,7 +33,11 @@ export interface IdentityConfig {
     jwtCookie?: string
     /** Custom anon-id store. Defaults to localStorage with a first-party-cookie fallback. */
     store?: IdentityStore
-    /** Selects the built-in store when `store` is not provided. Default `'localStorage'`. */
+    /**
+     * Forces a single built-in store when `store` is not provided: plain `localStorage`, or a
+     * first-party cookie. When unset, the default combined store applies — `localStorage` with a
+     * first-party cookie fallback, writing to both.
+     */
     storeKind?: 'localStorage' | 'cookie'
     /** Storage key / cookie name for the persisted anonymous identifier. Default `'mos_anon_id'`. */
     storeKey?: string
@@ -45,4 +49,4 @@ export interface IdentityConfig {
 }
 
 /** An explicit identity supplied via `mos.identify(...)` — the highest-precedence source. */
-export type ExplicitIdentity = { userJwt: string } | string
+export type ExplicitIdentity = { userJwt: string }

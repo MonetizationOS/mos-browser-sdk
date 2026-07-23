@@ -120,11 +120,6 @@ describe('resolveIdentity — precedence order', () => {
         const id = await resolveIdentity({ config: {}, store: memStore() })
         expect(id).toEqual({ createAnonymousIdentifier: true })
     })
-
-    it('a string explicit value is treated as a userJwt', async () => {
-        const id = await resolveIdentity({ explicit: 'RAW', config: {}, store: memStore() })
-        expect(id).toEqual({ userJwt: 'RAW', createAnonymousIdentifierFallback: true })
-    })
 })
 
 describe('persistAnonymousIdentifier', () => {
